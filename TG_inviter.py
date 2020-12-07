@@ -15,7 +15,7 @@ import time
 
 ACCOUNTS_JSON_PATH = 'accounts.json'
 USERS_CSV_PATH = 'members.csv'
-CHAT_NAME = "testing_chat_123"
+CHAT_NAME = "ggggg33331111"
 
 
 def get_accounts(file_path=ACCOUNTS_JSON_PATH):
@@ -47,10 +47,15 @@ def main():
             for index, member_username in enumerate(members_usernames):
                 try:
                     member = app.get_users(member_username)
-                except FloodWait:
-                    not_added_members.append(member_username)
-                    not_added_members.extend(members_usernames[index+1:])
-                    break
+                except FloodWait as ex:
+                    inp = input('Ожидать {} секунд (д/н): '.format(ex.x))
+                    if inp == 'д':
+                        print('Ожидание...')
+                        time.sleep(ex.x)
+                        not_added_members.append(member_username)
+                    else:
+                        not_added_members.extend(members_usernames[index:])
+                        break
                 try:
                     app.join_chat(CHAT_NAME)
                     app.add_chat_members(CHAT_NAME, member.id)
@@ -61,8 +66,17 @@ def main():
                 except Forbidden:
                     continue
                 except PeerFlood:
-                    not_added_members.append(member_username)
-                    continue
+                    not_added_members.extend(members_usernames[index:])
+                    break
+                except FloodWait as ex:
+                    inp = input('Ожидать {} секунд (д/н): '.format(ex.x))
+                    if inp == 'д':
+                        print('Ожидание...')
+                        time.sleep(ex.x)
+                        not_added_members.append(member_username)
+                    else:
+                        not_added_members.extend(members_usernames[index:])
+                        break
                 print("В чат добавлено: ", +i)
             save_members(not_added_members)
             time.sleep(5)
