@@ -36,7 +36,10 @@ def main():
         with Client(str(account['api_id']), account['api_id'], api_hash=account['api_hash']) as app:
             i = 0
             members_usernames = get_members()
+            if not members_usernames:
+                continue
             members = app.get_users(members_usernames)
+            not_added_members = []
             for member in members:
                 try:
                     app.join_chat(CHAT_NAME)
@@ -44,8 +47,10 @@ def main():
                     i += 1
                 except Exception:
                     print('Баг')
+                    not_added_members.append(member.username)
                     pass
                 print("В чат добавлено: ", +i)
+            save_members(not_added_members)
 
 
 if __name__ == '__main__':
