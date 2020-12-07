@@ -5,8 +5,13 @@ from pyrogram.errors import (
     SeeOther, Unauthorized, UnknownError
 )
 import time
+from pyrogram.errors.exceptions.bad_request_400 import UserNotMutualContact
+from pyrogram.errors.exceptions.forbidden_403 import Forbidden
+from pyrogram.errors.exceptions.bad_request_400 import PeerFlood
+from pyrogram.errors.exceptions.flood_420 import FloodWait
 import json
 import csv
+import time
 
 ACCOUNTS_JSON_PATH = 'accounts.json'
 USERS_CSV_PATH = 'members.csv'
@@ -21,7 +26,7 @@ def get_accounts(file_path=ACCOUNTS_JSON_PATH):
 def get_members(file_path=USERS_CSV_PATH):
     with open(file_path, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, delimiter=";")
-        return [el[0] for el in reader]
+        return [el[0] for el in reader if el[0] if el[0] != ' username']
 
 
 def save_members(members, file_path=USERS_CSV_PATH):
@@ -38,19 +43,29 @@ def main():
             members_usernames = get_members()
             if not members_usernames:
                 continue
-            members = app.get_users(members_usernames)
             not_added_members = []
-            for member in members:
+            for index, member_username in enumerate(members_usernames):
+                try:
+                    member = app.get_users(member_username)
+                except FloodWait:
+                    not_added_members.append(member_username)
+                    not_added_members.extend(members_usernames[index+1:])
+                    break
                 try:
                     app.join_chat(CHAT_NAME)
                     app.add_chat_members(CHAT_NAME, member.id)
                     i += 1
-                except Exception:
-                    print('Баг')
-                    not_added_members.append(member.username)
-                    pass
+                except UserNotMutualContact:
+                    not_added_members.append(member_username)
+                    continue
+                except Forbidden:
+                    continue
+                except PeerFlood:
+                    not_added_members.append(member_username)
+                    continue
                 print("В чат добавлено: ", +i)
             save_members(not_added_members)
+            time.sleep(5)
 
 
 if __name__ == '__main__':
