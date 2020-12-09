@@ -16,6 +16,7 @@ import time
 ACCOUNTS_JSON_PATH = 'accounts.json'
 USERS_CSV_PATH = 'members.csv'
 CHAT_NAME = "ggggg33331111"
+DELAY_RANGE = 100
 
 
 def get_accounts(file_path=ACCOUNTS_JSON_PATH):
@@ -38,7 +39,8 @@ def save_members(members, file_path=USERS_CSV_PATH):
 def main():
     accounts = get_accounts()
     for account in accounts:
-        with Client(str(account['api_id']), account['api_id'], api_hash=account['api_hash']) as app:
+        print('Клиент:{} {}'.format(account['session_name'], account['api_id']))
+        with Client(account['session_name'], account['api_id'], api_hash=account['api_hash']) as app:
             i = 0
             members_usernames = get_members()
             if not members_usernames:
@@ -48,11 +50,10 @@ def main():
                 try:
                     member = app.get_users(member_username)
                 except FloodWait as ex:
-                    inp = input('Ожидать {} секунд (д/н): '.format(ex.x))
-                    if inp == 'д':
-                        print('Ожидание...')
-                        time.sleep(ex.x)
+                    if int(ex.x) < DELAY_RANGE:
+                        print('Ожидание {} ...'.format(ex.x))
                         not_added_members.append(member_username)
+                        time.sleep(ex.x)
                     else:
                         not_added_members.extend(members_usernames[index:])
                         break
@@ -69,14 +70,14 @@ def main():
                     not_added_members.extend(members_usernames[index:])
                     break
                 except FloodWait as ex:
-                    inp = input('Ожидать {} секунд (д/н): '.format(ex.x))
-                    if inp == 'д':
-                        print('Ожидание...')
-                        time.sleep(ex.x)
+                    if int(ex.x) < DELAY_RANGE:
+                        print('Ожидание {} ...'.format(ex.x))
                         not_added_members.append(member_username)
+                        time.sleep(ex.x)
                     else:
                         not_added_members.extend(members_usernames[index:])
                         break
+
                 print("В чат добавлено: ", +i)
             save_members(not_added_members)
             time.sleep(5)
